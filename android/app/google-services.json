@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856263630414",
+    "project_id": "chatappuniba",
+    "storage_bucket": "chatappuniba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856263630414:android:ec0f61a2247a82f2416d1f",
+        "android_client_info": {
+          "package_name": "com.mobile.uniba"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVj5Ez4uaVpnrdR0-CD_GtsCHectCHpWQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
