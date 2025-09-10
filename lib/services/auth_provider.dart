@@ -1,37 +1,24 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthProvider with ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Dummy properties untuk ganti Firebase
+  String? _currentUserId;
+  bool _isSignedIn = false;
 
-  User? get currentUser => _auth.currentUser;
-
-  bool get isSignedIn => currentUser != null;
+  String? get currentUserId => _currentUserId;
+  bool get isSignedIn => _isSignedIn;
 
   Future<void> signIn(String email, String password) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: 'password');
+    // Dummy sign in - langsung sukses
+    _currentUserId = "dummy_user_id";
+    _isSignedIn = true;
     notifyListeners();
   }
 
-  // Future<void> signUp(
-  //     String email, String password, String name, String imageUrl) async {
-  //   UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-  //       email: email, password: password);
-
-  //   // final imageurl = await _uploadImage(_image!);
-  //   await _firestore.collection('users').doc(userCredential.user!.uid).set({
-  //     'uid': userCredential.user!.uid,
-  //     'name': name,
-  //     'email': email,
-  //     // 'imageUrl': imageUrl,
-  //   });
-  //   notifyListeners();
-  // }
-
   Future<void> signOut() async {
-    await _auth.signOut();
+    // Dummy sign out
+    _currentUserId = null;
+    _isSignedIn = false;
     notifyListeners();
   }
 }

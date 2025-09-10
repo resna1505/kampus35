@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kampus/blocs/auth/auth_bloc.dart';
@@ -43,13 +43,13 @@ void main() async {
   //   options: DefaultFirebaseOptions.currentPlatform,
   // );
   // Cek apakah Firebase sudah diinisialisasi
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      // options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } else {
-    Firebase.app();
-  }
+  // if (Firebase.apps.isEmpty) {
+  //   await Firebase.initializeApp(
+  //     // options: DefaultFirebaseOptions.currentPlatform,
+  //   );
+  // } else {
+  //   Firebase.app();
+  // }
   runApp(MyApp());
 }
 

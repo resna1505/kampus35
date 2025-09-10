@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:kampus/shared/theme.dart';
 import 'package:kampus/ui/widgets/build_absence.dart';
@@ -9,10 +9,10 @@ import 'package:kampus/ui/widgets/build_campus_news.dart';
 import 'package:kampus/ui/widgets/build_explore.dart';
 import 'package:kampus/ui/widgets/build_profile.dart';
 import 'package:kampus/ui/widgets/build_schedule.dart';
-import 'package:kampus/services/chat_provider.dart';
-import 'package:kampus/ui/widgets/chat_tile.dart';
-import 'package:kampus/ui/widgets/search_screen.dart';
-import 'package:provider/provider.dart';
+// import 'package:kampus/services/chat_provider.dart';
+// import 'package:kampus/ui/widgets/chat_tile.dart';
+// import 'package:kampus/ui/widgets/search_screen.dart';
+// import 'package:provider/provider.dart';
 
 class HomePageMahasiswa extends StatefulWidget {
   const HomePageMahasiswa({super.key});
@@ -25,123 +25,118 @@ class _HomePageMahasiswaState extends State<HomePageMahasiswa> {
   int _currentIndex = 0;
   String qrResult = "";
 
-  final _auth = FirebaseAuth.instance;
-  User? loggedInUser;
+  // final _auth = FirebaseAuth.instance;
+  // User? loggedInUser;
 
   void initState() {
     super.initState();
-    getCurrentUser();
+    // getCurrentUser();
   }
 
-  void getCurrentUser() {
-    // try {
-    final user = _auth.currentUser;
-    if (user != null) {
-      loggedInUser = user;
-    }
-    // } catch (e) {
-    //   print(e);
-    // }
-  }
+  // void getCurrentUser() {
+  //   // try {
+  //   final user = _auth.currentUser;
+  //   if (user != null) {
+  //     loggedInUser = user;
+  //   }
+  //   // } catch (e) {
+  //   //   print(e);
+  //   // }
+  // }
 
-  Future<Map<String, dynamic>> _fetchChatData(String chatId) async {
-    final chatDoc =
-        await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
-    final chatData = chatDoc.data();
-    final users = chatData!['users'] as List<dynamic>?;
-    final receiverId = users!.firstWhere((id) => id != loggedInUser!.uid);
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverId)
-        .get();
-    final userData = userDoc.data()!;
-    return {
-      'chatId': chatId,
-      'lastMessage': chatData['lastMessage'] ?? 'No messages yet',
-      'timestamp': chatData['timestamp']?.toDate() ?? DateTime.now(),
-      'userData': userData,
-    };
-  }
+  // Future<Map<String, dynamic>> _fetchChatData(String chatId) async {
+  //   final chatDoc = await FirebaseFirestore.instance
+  //       .collection('chats')
+  //       .doc(chatId)
+  //       .get();
+  //   final chatData = chatDoc.data();
+  //   final users = chatData!['users'] as List<dynamic>?;
+  //   final receiverId = users!.firstWhere((id) => id != loggedInUser!.uid);
+  //   final userDoc = await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(receiverId)
+  //       .get();
+  //   final userData = userDoc.data()!;
+  //   return {
+  //     'chatId': chatId,
+  //     'lastMessage': chatData['lastMessage'] ?? 'No messages yet',
+  //     'timestamp': chatData['timestamp']?.toDate() ?? DateTime.now(),
+  //     'userData': userData,
+  //   };
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final chatProvider = Provider.of<ChatProvider>(context);
+    // final chatProvider = Provider.of<ChatProvider>(context);
     return Scaffold(
       backgroundColor: lightBackgroundColor,
-      bottomNavigationBar: BottomAppBar(
-        // color: whiteColor,
-        // shape: const CircularNotchedRectangle(),
-        // clipBehavior: Clip.antiAlias,
-        // notchMargin: 6,
-        // elevation: 0,
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: whiteColor,
-          elevation: 0,
-          selectedItemColor: purpleColor,
-          unselectedItemColor: greyColor,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedLabelStyle: blueTextStyle.copyWith(
-            fontSize: 10,
-            fontWeight: medium,
-          ),
-          unselectedLabelStyle: blackTextStyle.copyWith(
-            fontSize: 10,
-            fontWeight: medium,
-          ),
-          currentIndex: _currentIndex,
-          items: [
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/ic_home.png',
-                width: 25,
-                color: _currentIndex == 0 ? purpleColor : greyColor,
-              ),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/ic_explore.png',
-                width: 25,
-                color: _currentIndex == 1 ? purpleColor : greyColor,
-              ),
-              label: 'Explore',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.qr_code_scanner,
-                color: _currentIndex == 2 ? purpleColor : greyColor,
-                size: 30,
-              ),
-              label: 'absence',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/ic_chat.png',
-                width: 25,
-                color: _currentIndex == 3 ? purpleColor : greyColor,
-              ),
-              label: 'Chats',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/ic_account.png',
-                width: 25,
-                color: _currentIndex == 4 ? purpleColor : greyColor,
-              ),
-              label: 'Account',
-            ),
-          ],
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-            // if (index == 1) {
-            //   Navigator.pushNamed(context, '/learning-progress');
-            // }
-          },
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: whiteColor,
+        elevation: 0,
+        selectedItemColor: purpleColor,
+        unselectedItemColor: greyColor,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedLabelStyle: blueTextStyle.copyWith(
+          fontSize: 10,
+          fontWeight: medium,
         ),
+        unselectedLabelStyle: blackTextStyle.copyWith(
+          fontSize: 10,
+          fontWeight: medium,
+        ),
+        currentIndex: _currentIndex,
+        items: [
+          BottomNavigationBarItem(
+            icon: Image.asset(
+              'assets/ic_home.png',
+              width: 25,
+              color: _currentIndex == 0 ? purpleColor : greyColor,
+            ),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Image.asset(
+              'assets/ic_explore.png',
+              width: 25,
+              color: _currentIndex == 1 ? purpleColor : greyColor,
+            ),
+            label: 'Explore',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.qr_code_scanner,
+              color: _currentIndex == 2 ? purpleColor : greyColor,
+              size: 30,
+            ),
+            label: 'absence',
+          ),
+          // BottomNavigationBarItem(
+          //   icon: Image.asset(
+          //     'assets/ic_chat.png',
+          //     width: 25,
+          //     color: _currentIndex == 3 ? purpleColor : greyColor,
+          //   ),
+          //   label: 'Chats',
+          // ),
+          BottomNavigationBarItem(
+            icon: Image.asset(
+              'assets/ic_account.png',
+              width: 25,
+              color: _currentIndex == 3 ? purpleColor : greyColor,
+            ),
+            label: 'Account',
+          ),
+        ],
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          // if (index == 1) {
+          //   Navigator.pushNamed(context, '/learning-progress');
+          // }
+        },
       ),
       body: ListView(
         children: [
@@ -161,116 +156,63 @@ class _HomePageMahasiswaState extends State<HomePageMahasiswa> {
             const BuildExplore(),
             // buildExplore(context),
           ],
-          if (_currentIndex == 2) ...[
-            const BuildAbsence(),
-          ],
+          if (_currentIndex == 2) ...[const BuildAbsence()],
+          // if (_currentIndex == 3) ...[
+          //   WillPopScope(
+          //     onWillPop: () async => true,
+          //     child: Container(
+          //       height: MediaQuery.of(context).size.height,
+          //       child: Column(
+          //         children: [
+          //           Container(
+          //             decoration: BoxDecoration(
+          //               border: Border(
+          //                 bottom: BorderSide(
+          //                   width: 1,
+          //                   color: greyDarkColor,
+          //                   style: BorderStyle.solid,
+          //                 ),
+          //               ),
+          //             ),
+          //             padding: const EdgeInsets.symmetric(
+          //               horizontal: 16,
+          //               vertical: 16,
+          //             ),
+          //             child: Align(
+          //               alignment: Alignment.centerLeft,
+          //               child: Text(
+          //                 'Chats',
+          //                 style: blackTextStyle.copyWith(
+          //                   fontSize: 22,
+          //                   fontWeight: bold,
+          //                 ),
+          //               ),
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   ),
+          // ],
           if (_currentIndex == 3) ...[
-            WillPopScope(
-              onWillPop: () async => true,
-              child: Container(
-                height: MediaQuery.of(context).size.height,
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            width: 1,
-                            color: greyDarkColor,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Chats',
-                          style: blackTextStyle.copyWith(
-                              fontSize: 22, fontWeight: bold),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: loggedInUser != null
-                            ? chatProvider.getChats(loggedInUser!.uid)
-                            : const Stream.empty(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-
-                          final chatDocs = snapshot.data!.docs;
-
-                          return FutureBuilder<List<Map<String, dynamic>>>(
-                            future: Future.wait(
-                              chatDocs.map(
-                                (chatDoc) async {
-                                  final chatData =
-                                      await _fetchChatData(chatDoc.id);
-                                  return chatData;
-                                },
-                              ),
-                            ),
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-
-                              final chatDataList = snapshot.data!;
-
-                              return ListView.builder(
-                                itemCount: chatDataList.length,
-                                itemBuilder: (context, index) {
-                                  final chatData = chatDataList[index];
-
-                                  return ChatTile(
-                                    chatId: chatData['chatId'],
-                                    lastMessage: chatData['lastMessage'],
-                                    timestamp: chatData['timestamp'],
-                                    receiverData: chatData['userData'],
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          if (_currentIndex == 4) ...[
             const BuildAccounts(),
             // buildAccounts(context),
           ],
         ],
       ),
-      floatingActionButton: _currentIndex == 3
-          ? FloatingActionButton(
-              backgroundColor: blueDarkColor,
-              foregroundColor: whiteColor,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SearchScreen(),
-                  ),
-                );
-              },
-              child: const Icon(Icons.border_color_sharp),
-            )
-          : null,
+      // floatingActionButton: _currentIndex == 3
+      //     ? FloatingActionButton(
+      //         backgroundColor: blueDarkColor,
+      //         foregroundColor: whiteColor,
+      //         onPressed: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(builder: (context) => const SearchScreen()),
+      //           );
+      //         },
+      //         child: const Icon(Icons.border_color_sharp),
+      //       )
+      //     : null,
       // body: tabs[_currentIndex],
     );
   }
