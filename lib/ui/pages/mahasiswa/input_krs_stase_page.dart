@@ -7,7 +7,6 @@ import 'package:kampus/shared/shared_values.dart';
 import 'package:kampus/shared/theme.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-// import 'package:printing/printing.dart';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,36 +24,35 @@ class InputKRSStase extends StatefulWidget {
 class _InputKRSStaseState extends State<InputKRSStase> {
   int selectedTab = 0;
 
-  List<Map<String, dynamic>> kelas = [];
-  List<bool> isCheckedKelas = [];
-
+  List<Map<String, dynamic>> mataKuliah = [];
+  List<Map<String, dynamic>> lokasiOptions = [];
   List<Map<String, dynamic>> krsTersimpan = [];
-  List<bool> isCheckedKrs = [];
 
-  int totalSKS = 0;
+  int? selectedMataKuliahIndex;
+  String? selectedLokasiId;
 
   bool _isSubmitting = false;
 
-  // Variabel data dari API
+  // Data dari API
   String semester = '-';
-  String batasSKS = '-';
   String periodeAkademik = '-';
-
-  List<Map<String, dynamic>> kelasOptions = [];
+  String batasSKS = '-';
+  String idMahasiswa = '';
 
   @override
   void initState() {
     super.initState();
-    fetchKelasOptions();
-    fetchKRSData();
-    fetchKRSTersimpan();
-
-    isCheckedKelas = [];
-    isCheckedKrs = [];
+    _initializeData();
   }
 
-  Future<void> fetchKelasOptions() async {
-    final url = Uri.parse('$baseUrl/akademik/kelas');
+  Future<void> _initializeData() async {
+    await fetchLokasiOptions();
+    await fetchKRSData();
+    await fetchKRSTersimpan();
+  }
+
+  Future<void> fetchLokasiOptions() async {
+    final url = Uri.parse('$baseUrl/akademik/lokasi');
 
     try {
       final response = await http.get(url);
@@ -62,354 +60,261 @@ class _InputKRSStaseState extends State<InputKRSStase> {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
-          kelasOptions = data.map<Map<String, dynamic>>((item) {
-            return {
-              'ID': item['ID'] ?? '-',
-              'NAMA': item['NAMA'] ?? '-',
-            };
+          lokasiOptions = data.map<Map<String, dynamic>>((item) {
+            return {'ID': item['ID'] ?? '-', 'LOKASI': item['LOKASI'] ?? '-'};
           }).toList();
         });
       } else {
         if (mounted) {
-          showSnackbar(context, 'Info', 'Gagal mengambil data kelas', 'info');
+          showSnackbar(context, 'Info', 'Gagal mengambil data lokasi', 'info');
         }
       }
     } catch (e) {
-      debugPrint('Error fetch kelas options: $e');
+      debugPrint('Error fetch lokasi options: $e');
       if (mounted) {
-        showSnackbar(context, 'Error', 'Gagal mengambil data kelas', 'error');
+        showSnackbar(context, 'Error', 'Gagal mengambil data lokasi', 'error');
       }
     }
   }
 
   Future<void> fetchKRSData() async {
     final idmhs = await AuthService().getIdMahasiswa();
-    final url = Uri.parse('$baseUrl/mahasiswa/isikrs');
+    final url = Uri.parse('$baseUrl/mahasiswa/isikrsprofesi');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id': idmhs,
-        }),
-      );
+      final request = http.Request('GET', url);
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode({'id': idmhs});
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final List<dynamic> mataKuliahData = data['mata_kuliah'] ?? [];
 
         setState(() {
+          idMahasiswa = data['id_mahasiswa'] ?? '-';
           semester = data['semester']?.toString() ?? '-';
-          batasSKS = data['batas_sks']?.toString() ?? '-';
           periodeAkademik = data['tahun_ajaran'] ?? '-';
-          totalSKS = int.tryParse(data['batas_sks'].toString()) ?? 0;
+          batasSKS = data['batas_sks']?.toString() ?? '-';
 
-          final List<dynamic> mataKuliahData = data['mata_kuliah'] ?? [];
-
-          kelas = mataKuliahData.map<Map<String, dynamic>>((item) {
+          mataKuliah = mataKuliahData.map<Map<String, dynamic>>((item) {
             return {
-              'id': item['ID'] ?? '-',
-              'nama': item['NAMA'] ?? '-',
-              'kdwpltbkmk': item['KDWPLTBKMK'] ?? '-',
-              'sks': item['SKS'] ?? 0,
-              'semester': item['SEMESTER'] ?? '-',
-              'thsmstbkmk': item['THSMSTBKMK'] ?? '-',
+              'ID': item['ID'] ?? '-',
+              'NAMA': item['NAMA'] ?? '-',
+              'KDWPLTBKMK': item['KDWPLTBKMK'] ?? '-',
+              'SKS': item['SKS'] ?? '0',
+              'SEMESTER': item['SEMESTER'] ?? '-',
+              'THSMSTBKMK': item['THSMSTBKMK'] ?? '-',
               'idmahasiswa': item['idmahasiswa'] ?? '-',
               'tahunajaran': item['tahunajaran'] ?? '-',
               'semesterajaran': item['semesterajaran'] ?? '-',
-              'selectedKelas': item['kelas'] ?? '01',
             };
           }).toList();
-
-          // Reset checkbox list dengan nilai false semua
-          isCheckedKelas = List<bool>.filled(kelas.length, false);
         });
       } else {
-        final data = jsonDecode(response.body);
-
         if (mounted) {
-          showSnackbar(context, 'Info', data['messages']['error'], 'info');
+          showSnackbar(context, 'Info', 'Error ${response.statusCode}', 'info');
         }
       }
     } catch (e) {
-      debugPrint('Error: $e');
+      if (mounted) {
+        showSnackbar(context, 'Error', 'Gagal mengambil data', 'error');
+      }
     }
   }
 
   Future<void> fetchKRSTersimpan() async {
     final idmhs = await AuthService().getIdMahasiswa();
-    final url = Uri.parse('$baseUrl/mahasiswa/ambilmatkulkrs');
+    final url = Uri.parse('$baseUrl/mahasiswa/ambilmatkulkrsprofesi');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id': idmhs,
-        }),
-      );
+      final request = http.Request('GET', url);
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode({'id': idmhs});
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
           krsTersimpan = data.map<Map<String, dynamic>>((item) {
             return {
-              "idmahasiswa": item['IDMAHASISWA'] ?? '-',
-              "idmakul": item['IDMAKUL'] ?? '-',
-              "nama": item['NAMA'] ?? '-',
-              "sks": int.tryParse(item['SKS'].toString()) ?? 0,
-              "thnajar": item['THNAJAR'] ?? '-',
-              "semester": item['SMSTRAJAR'] ?? '-',
-              "thnsm": item['THNSM'] ?? '-',
-              "semestermakul": item['SEMESTERMAKUL'] ?? '-',
-              "kelas": item['KELAS'] ?? '-',
+              "IDMAHASISWA": item['IDMAHASISWA'] ?? '-',
+              "IDMAKUL": item['IDMAKUL'] ?? '-',
+              "NAMA": item['NAMA'] ?? '-',
+              "SKS": item['SKS'] ?? '0',
+              "THNAJAR": item['THNAJAR'] ?? '-',
+              "SMSTRAJAR": item['SMSTRAJAR'] ?? '-',
+              "THNSM": item['THNSM'] ?? '-',
+              "SEMESTERMAKUL": item['SEMESTERMAKUL'] ?? '-',
+              "KELAS": item['KELAS'] ?? '-',
+              "IDLOKASI": item['IDLOKASI'] ?? '-',
+              "LOKASI": item['LOKASI'] ?? '-',
             };
           }).toList();
-
-          isCheckedKrs = List<bool>.filled(krsTersimpan.length, false);
         });
       } else if (response.statusCode == 404) {
-        // Handle 404 response by setting empty data
         setState(() {
           krsTersimpan = [];
-          isCheckedKrs = [];
         });
       } else {
         final data = jsonDecode(response.body);
         if (mounted) {
-          showSnackbar(context, 'Info',
-              data['messages']['error'] ?? 'Terjadi kesalahan', 'info');
+          showSnackbar(
+            context,
+            'Info',
+            data['messages']?['error'] ?? 'Error mengambil data',
+            'info',
+          );
         }
       }
     } catch (e) {
       debugPrint('Error fetch KRS Tersimpan: $e');
-      // Handle error by setting empty data
       if (mounted) {
         setState(() {
           krsTersimpan = [];
-          isCheckedKrs = [];
         });
-        showSnackbar(context, 'Error', 'Gagal memuat data KRS', 'error');
+        showSnackbar(
+          context,
+          'Error',
+          'Gagal memuat data KRS tersimpan',
+          'error',
+        );
       }
     }
   }
 
-  // Future<void> postKRSData(List<Map<String, dynamic>> selectedCourses) async {
-  //   final url = Uri.parse('$baseUrl/mahasiswa/postisikrs');
+  Future<void> postKRSData() async {
+    if (selectedMataKuliahIndex == null || selectedLokasiId == null) {
+      showSnackbar(context, 'Info', 'Pilih mata kuliah dan lokasi', 'info');
+      return;
+    }
 
-  //   try {
-  //     final response = await http.post(
-  //       url,
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode(selectedCourses),
-  //     );
+    final selectedMatkul = mataKuliah[selectedMataKuliahIndex!];
+    final url = Uri.parse('$baseUrl/mahasiswa/postisikrsprofesi');
 
-  //     if (response.statusCode == 200) {
-  //       final responseData = jsonDecode(response.body);
-
-  //       if (mounted) {
-  //         showSnackbar(context, 'Success', responseData['message'].toString(),
-  //             'success');
-  //       }
-  //       fetchKRSTersimpan();
-  //     } else {
-  //       final data = jsonDecode(response.body);
-
-  //       if (mounted) {
-  //         showSnackbar(context, 'Info', data['messages']['message'], 'info');
-  //       }
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       showSnackbar(context, 'Error', e.toString(), 'error');
-  //     }
-  //   }
-  // }
-
-  Future<void> postKRSData(List<Map<String, dynamic>> selectedCourses) async {
-    final url = Uri.parse('$baseUrl/mahasiswa/postisikrs');
+    final requestData = {
+      "ID": selectedMatkul['ID'],
+      "NAMA": selectedMatkul['NAMA'],
+      "KDWPLTBKMK": selectedMatkul['KDWPLTBKMK'],
+      "SKS": selectedMatkul['SKS'],
+      "SEMESTER": selectedMatkul['SEMESTER'],
+      "THSMSTBKMK": selectedMatkul['THSMSTBKMK'],
+      "idmahasiswa": selectedMatkul['idmahasiswa'],
+      "tahunajaran": selectedMatkul['tahunajaran'],
+      "semesterajaran": selectedMatkul['semesterajaran'],
+      "KELAS": "01", // Default class
+      "lokasimakul": selectedLokasiId,
+    };
 
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(selectedCourses),
+        body: jsonEncode(requestData),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        if (responseData['flag'] == 1) {
-          final confirm =
-              await showKRSConfirmationModal(responseData['message']);
-
-          if (!confirm) return;
-
-          final confirmUrl = Uri.parse('$baseUrl/mahasiswa/postisikrscfm');
-          final confirmResponse = await http.post(
-            confirmUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(selectedCourses),
-          );
-
-          if (confirmResponse.statusCode == 200) {
-            final confirmData = jsonDecode(confirmResponse.body);
-            if (mounted) {
-              showSnackbar(
-                  context, 'Success', confirmData['message'], 'success');
-              fetchKRSTersimpan();
-            }
-          } else {
-            final err = jsonDecode(confirmResponse.body);
-            if (mounted) {
-              showSnackbar(context, 'Info', err['messages']['message'], 'info');
-            }
+        if (responseData['success'] == true) {
+          if (mounted) {
+            showSnackbar(
+              context,
+              'Success',
+              responseData['message'],
+              'success',
+            );
+            await fetchKRSTersimpan(); // Refresh data tersimpan
+            setState(() {
+              selectedMataKuliahIndex = null;
+              selectedLokasiId = null;
+            });
           }
-          return;
-        }
-
-        if (mounted) {
-          showSnackbar(context, 'Success', responseData['message'].toString(),
-              'success');
-          fetchKRSTersimpan();
+        } else {
+          if (mounted) {
+            showSnackbar(
+              context,
+              'Info',
+              responseData['message'] ?? 'Gagal menyimpan',
+              'info',
+            );
+          }
         }
       } else {
         final data = jsonDecode(response.body);
         if (mounted) {
-          showSnackbar(context, 'Info', data['messages']['message'], 'info');
+          showSnackbar(
+            context,
+            'Error',
+            data['message'] ?? 'Terjadi kesalahan',
+            'error',
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        showSnackbar(context, 'Error', e.toString(), 'error');
+        showSnackbar(context, 'Error', 'Gagal menyimpan: $e', 'error');
       }
     }
   }
 
-  Future<void> hapusKRSData(List<Map<String, dynamic>> selectedKrs) async {
-    final url = Uri.parse('$baseUrl/mahasiswa/hapusisikrs');
+  Future<void> hapusKRSData(Map<String, dynamic> krsItem) async {
+    final url = Uri.parse('$baseUrl/mahasiswa/hapusisikrsprofesi');
 
     try {
       final response = await http.delete(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(selectedKrs),
+        body: jsonEncode(krsItem),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        if (mounted) {
-          showSnackbar(context, 'Success', responseData['message'].toString(),
-              'success');
+        if (responseData['success'] == true) {
+          if (mounted) {
+            showSnackbar(
+              context,
+              'Success',
+              responseData['message'],
+              'success',
+            );
+            await fetchKRSTersimpan(); // Refresh data
+          }
+        } else {
+          if (mounted) {
+            showSnackbar(
+              context,
+              'Info',
+              responseData['message'] ?? 'Gagal menghapus',
+              'info',
+            );
+          }
         }
-        fetchKRSTersimpan();
       } else {
         final data = jsonDecode(response.body);
-
         if (mounted) {
-          showSnackbar(context, 'Info', data['messages']['error'], 'info');
+          showSnackbar(
+            context,
+            'Error',
+            data['message'] ?? 'Terjadi kesalahan',
+            'error',
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        showSnackbar(context, 'Error', e.toString(), 'error');
+        showSnackbar(context, 'Error', 'Gagal menghapus: $e', 'error');
       }
     }
-  }
-
-  Future<bool> showKRSConfirmationModal(String message) async {
-    return await showModalBottomSheet<bool>(
-          context: context,
-          isDismissible: false,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (BuildContext context) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Wrap(
-                children: [
-                  Center(
-                    child: Text(
-                      'Pengajuan KRS',
-                      style: blackTextStyle.copyWith(
-                        fontSize: 16,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Center(
-                    child: Text(
-                      message,
-                      style: blackTextStyle.copyWith(
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      'Apakah anda ingin melanjutkan pengisian KRS?',
-                      style: blackTextStyle.copyWith(
-                        fontSize: 14,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text(
-                            'Tidak',
-                            style: blackTextStyle.copyWith(
-                              fontSize: 12,
-                              fontWeight: semiBold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                          ),
-                          child: Text(
-                            'Ya',
-                            style: whiteTextStyle.copyWith(
-                              fontSize: 12,
-                              fontWeight: semiBold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            );
-          },
-        ) ??
-        false;
   }
 
   @override
   Widget build(BuildContext context) {
-    int selectedCount = isCheckedKelas.where((e) => e).length;
-    int totalSelectedSKS = 0;
-    for (int i = 0; i < isCheckedKelas.length; i++) {
-      if (isCheckedKelas[i]) {
-        // Pastikan data sks di parse dulu ke int
-        totalSelectedSKS += int.tryParse(kelas[i]['sks'].toString()) ?? 0;
-      }
-    }
-
     return Scaffold(
       backgroundColor: whiteColor,
       appBar: AppBar(
@@ -417,10 +322,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
         backgroundColor: whiteColor,
         title: Text(
           'Kartu Rencana Studi Stase',
-          style: blackTextStyle.copyWith(
-            fontSize: 18,
-            fontWeight: semiBold,
-          ),
+          style: blackTextStyle.copyWith(fontSize: 18, fontWeight: semiBold),
         ),
       ),
       body: Column(
@@ -448,7 +350,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
           // Tabs
           Row(
             children: [
-              _buildTabButton('PILIH KRS', 0),
+              _buildTabButton('PILIH KRS STASE', 0),
               _buildTabButton('KRS TERSIMPAN', 1),
             ],
           ),
@@ -456,8 +358,8 @@ class _InputKRSStaseState extends State<InputKRSStase> {
           // Content per tab
           Expanded(
             child: selectedTab == 0
-                ? _buildPilihKelas(totalSelectedSKS, selectedCount)
-                : _buildKRSTersimpan(totalSelectedSKS),
+                ? _buildPilihMataKuliah()
+                : _buildKRSTersimpan(),
           ),
         ],
       ),
@@ -475,10 +377,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
             child: Text(
               title,
               style: (selectedTab == tabIndex ? whiteTextStyle : blackTextStyle)
-                  .copyWith(
-                fontSize: 14,
-                fontWeight: semiBold,
-              ),
+                  .copyWith(fontSize: 12, fontWeight: semiBold),
             ),
           ),
         ),
@@ -486,93 +385,143 @@ class _InputKRSStaseState extends State<InputKRSStase> {
     );
   }
 
-  Widget _buildPilihKelas(int totalSelectedSKS, int selectedCount) {
+  Widget _buildPilihMataKuliah() {
     return Column(
       children: [
+        // Info card about single selection
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            border: Border.all(color: Colors.blue.shade200),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Anda hanya dapat memilih SATU mata kuliah stase per periode. Pilih lokasi yang tersedia.',
+                  style: blackTextStyle.copyWith(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         Expanded(
-          child: kelas.isEmpty
+          child: mataKuliah.isEmpty
               ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 48,
                         height: 48,
-                        margin: const EdgeInsets.only(top: 12),
                         decoration: const BoxDecoration(
-                          shape: BoxShape.rectangle,
                           image: DecorationImage(
-                            fit: BoxFit.cover,
                             image: AssetImage('assets/img_no_data.png'),
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text.rich(
-                        TextSpan(
-                          text: 'Waktu Pengisian KRS\n ',
-                          style: blackTextStyle.copyWith(fontSize: 12),
-                          children: [
-                            TextSpan(
-                              text: 'Belum Dimulai / sudah ditutup',
-                              style: blackTextStyle.copyWith(fontSize: 12),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        'Belum ada mata kuliah stase\nyang tersedia',
+                        style: blackTextStyle.copyWith(fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: kelas.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: mataKuliah.length,
                   itemBuilder: (context, index) {
-                    final item = kelas[index];
+                    final matkul = mataKuliah[index];
+
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Checkbox(
-                              value: isCheckedKelas[index],
-                              onChanged: (val) {
-                                setState(() {
-                                  isCheckedKelas[index] = val ?? false;
-                                });
-                              },
+                            Row(
+                              children: [
+                                Radio<int>(
+                                  value: index,
+                                  groupValue: selectedMataKuliahIndex,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedMataKuliahIndex = value;
+                                      selectedLokasiId =
+                                          null; // Reset lokasi selection
+                                    });
+                                  },
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        matkul['NAMA'],
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                          fontWeight: semiBold,
+                                        ),
+                                      ),
+                                      Text(
+                                        'SKS ${matkul['SKS']} • ${matkul['ID']}',
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Semester ${matkul['SEMESTER']}',
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item['nama'],
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12, fontWeight: semiBold)),
-                                  Text('SKS ${item['sks']} • ${item['id']}',
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12)),
-                                  Text('Semester ${item['semester']}',
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12)),
-                                ],
+
+                            // Lokasi selection untuk mata kuliah yang dipilih
+                            if (selectedMataKuliahIndex == index) ...[
+                              const SizedBox(height: 12),
+                              const Divider(),
+                              Text(
+                                'Pilih Lokasi Stase:',
+                                style: blackTextStyle.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: semiBold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            DropdownButton<String>(
-                              value: item['selectedKelas'],
-                              items: kelasOptions.map((kelas) {
-                                return DropdownMenuItem<String>(
-                                  value: kelas['ID'],
-                                  child: Text(kelas['NAMA']),
+                              const SizedBox(height: 8),
+                              ...lokasiOptions.map((lokasi) {
+                                return RadioListTile<String>(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    lokasi['LOKASI'],
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  value: lokasi['ID'],
+                                  groupValue: selectedLokasiId,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedLokasiId = value;
+                                    });
+                                  },
                                 );
                               }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  item['selectedKelas'] = value!;
-                                });
-                              },
-                            ),
+                            ],
                           ],
                         ),
                       ),
@@ -580,98 +529,71 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                   },
                 ),
         ),
+
+        // Submit button
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.green.shade100,
+            color: Colors.green.shade50,
             border: Border(top: BorderSide(color: Colors.grey.shade300)),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$selectedCount Terpilih,\nTersisa ${totalSKS - totalSelectedSKS} SKS dari $totalSKS SKS',
-                style: blackTextStyle.copyWith(
-                  fontSize: 12,
-                  fontWeight: semiBold,
-                ),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed:
+                  _isSubmitting ||
+                      selectedMataKuliahIndex == null ||
+                      selectedLokasiId == null
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isSubmitting = true;
+                      });
+
+                      try {
+                        await postKRSData();
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _isSubmitting = false;
+                          });
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSubmitting
+                    ? Colors.green[300]
+                    : Colors.green,
+                foregroundColor: whiteColor,
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              ElevatedButton(
-                onPressed: _isSubmitting
-                    ? null
-                    : () async {
-                        setState(() {
-                          _isSubmitting = true;
-                        });
-
-                        final selectedCourses = <Map<String, dynamic>>[];
-
-                        for (int i = 0; i < isCheckedKelas.length; i++) {
-                          if (isCheckedKelas[i]) {
-                            final matkul = kelas[i];
-                            selectedCourses.add({
-                              "ID": matkul['id'],
-                              "NAMA": matkul['nama'],
-                              "KDWPLTBKMK": matkul['kdwpltbkmk'],
-                              "SKS": matkul['sks'].toString(),
-                              "SEMESTER": matkul['semester'].toString(),
-                              "THSMSTBKMK": matkul['thsmstbkmk'].toString(),
-                              "KELAS": matkul['selectedKelas'],
-                              "idmahasiswa": matkul['idmahasiswa'],
-                              "tahunajaran": matkul['tahunajaran'],
-                              "semesterajaran": matkul['semesterajaran'],
-                            });
-                          }
-                        }
-
-                        try {
-                          if (selectedCourses.isNotEmpty) {
-                            await postKRSData(selectedCourses);
-                          } else {
-                            showSnackbar(context, 'Info',
-                                'Pilih minimal 1 mata kuliah', 'info');
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() {
-                              _isSubmitting = false;
-                            });
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _isSubmitting ? Colors.green[300] : Colors.green,
-                  foregroundColor: whiteColor,
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        'Simpan',
-                        style: whiteTextStyle.copyWith(
-                          fontSize: 12,
-                          fontWeight: semiBold,
-                        ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
-              )
-            ],
+                    )
+                  : Text(
+                      'Daftar Stase',
+                      style: whiteTextStyle.copyWith(
+                        fontSize: 14,
+                        fontWeight: semiBold,
+                      ),
+                    ),
+            ),
           ),
-        )
+        ),
       ],
     );
   }
 
-  Widget _buildKRSTersimpan(int totalSelectedSKS) {
-    int totalSimpanSKS = krsTersimpan.fold(
+  Widget _buildKRSTersimpan() {
+    int totalSKS = krsTersimpan.fold(
       0,
-      (sum, item) => sum + (item['sks'] as int),
+      (sum, item) => sum + int.parse(item['SKS'].toString()),
     );
 
     return Column(
@@ -680,39 +602,21 @@ class _InputKRSStaseState extends State<InputKRSStase> {
           child: krsTersimpan.isEmpty
               ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 48,
                         height: 48,
-                        margin: const EdgeInsets.only(top: 12),
                         decoration: const BoxDecoration(
-                          shape: BoxShape.rectangle,
                           image: DecorationImage(
-                            fit: BoxFit.cover,
                             image: AssetImage('assets/img_no_data.png'),
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text.rich(
-                        TextSpan(
-                          text: 'Belum ada',
-                          style: blackTextStyle.copyWith(fontSize: 12),
-                          children: [
-                            TextSpan(
-                              text: ' Mata Kuliah\n',
-                              style: blueTextStyle.copyWith(
-                                fontSize: 12,
-                                fontWeight: semiBold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' Yang di Ambil',
-                              style: blackTextStyle.copyWith(fontSize: 12),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        'Belum ada KRS Stase\nyang terdaftar',
+                        style: blackTextStyle.copyWith(fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -722,51 +626,83 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                   padding: const EdgeInsets.all(16),
                   itemCount: krsTersimpan.length,
                   itemBuilder: (context, index) {
-                    // final item = krsTersimpan[index];
-                    if (index >= krsTersimpan.length ||
-                        index >= isCheckedKrs.length) {
-                      return const SizedBox();
-                    }
                     final item = krsTersimpan[index];
-
                     return Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Checkbox(
-                              value: isCheckedKrs[index],
-                              onChanged: (val) {
-                                setState(() {
-                                  isCheckedKrs[index] = val ?? false;
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['nama'],
-                                    style: blackTextStyle.copyWith(
-                                      fontSize: 12,
-                                      fontWeight: semiBold,
-                                    ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['NAMA'],
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 14,
+                                          fontWeight: semiBold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'SKS: ${item['SKS']} • Kode: ${item['IDMAKUL']}',
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Lokasi: ${item['LOKASI']} • Kelas: ${item['KELAS']}',
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Semester: ${item['SEMESTERMAKUL']} • ${item['THNAJAR']}',
+                                        style: blackTextStyle.copyWith(
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'SKS ${item['sks']} • ${item['idmakul']} • ${item['kelas']}',
-                                    style: blackTextStyle.copyWith(
-                                      fontSize: 12,
-                                    ),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Konfirmasi'),
+                                        content: Text(
+                                          'Hapus mata kuliah ${item['NAMA']}?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text('Batal'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text('Hapus'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      await hapusKRSData(item);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
                                   ),
-                                  Text(
-                                    'Semester ${item['semester']}',
-                                    style: blackTextStyle.copyWith(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -775,210 +711,90 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                   },
                 ),
         ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            border: Border.all(color: Colors.green),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'KRS telah diajukan ke dosen PA',
-                    style: greenTextStyle.copyWith(
-                      fontSize: 12,
-                      fontWeight: semiBold,
-                    ),
-                  ),
-                ],
-              ),
-              Text.rich(
-                TextSpan(
+
+        // Status and actions
+        if (krsTersimpan.isNotEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              border: Border.all(color: Colors.green),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    TextSpan(
-                      text: 'Sudah diambil : ',
-                      style: blackTextStyle.copyWith(
-                        fontSize: 12,
-                        fontWeight: semiBold,
-                      ),
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 18,
                     ),
-                    TextSpan(
-                      text: '$totalSimpanSKS SKS',
-                      style: blueTextStyle.copyWith(
-                        fontSize: 12,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '    Tersisa ',
-                      style: blackTextStyle.copyWith(
-                        fontSize: 12,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '${totalSKS - totalSimpanSKS} SKS',
-                      style: redTextStyle.copyWith(
-                        fontSize: 12,
-                        fontWeight: semiBold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' dari $totalSKS SKS',
-                      style: greyTextStyle.copyWith(
+                    const SizedBox(width: 6),
+                    Text(
+                      'KRS Stase telah didaftarkan',
+                      style: greenTextStyle.copyWith(
                         fontSize: 12,
                         fontWeight: semiBold,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(
-          height: 8,
-        ),
-        // ElevatedButton.icon(
-        //   icon: const Icon(Icons.download),
-        //   label: const Text('Download PDF KRS'),
-        //   onPressed: krsTersimpan.isEmpty
-        //       ? null
-        //       : () async {
-        //           final hasPermission = await _requestStoragePermission();
-        //           if (!hasPermission) {
-        //             if (mounted) {
-        //               showSnackbar(
-        //                   context,
-        //                   'Error',
-        //                   'Izin penyimpanan diperlukan untuk download PDF',
-        //                   'error');
-        //             }
-        //             return;
-        //           }
-        //           await generateKrsPdf(
-        //             context,
-        //           );
-        //         },
-        // ),
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: ElevatedButton.icon(
-            onPressed: krsTersimpan.isEmpty
-                ? null
-                : () async {
-                    final hasPermission = await _requestStoragePermission();
-                    if (!hasPermission) {
-                      if (mounted) {
-                        showSnackbar(
-                            context,
-                            'Error',
-                            'Izin penyimpanan diperlukan untuk download PDF',
-                            'error');
-                      }
-                      return;
-                    }
-                    await generateKrsPdf(
-                      context,
-                    );
-                  },
-            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-            label: const Text(
-              'Download KRS PDF',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  krsTersimpan.isEmpty ? Colors.grey : blueDarkColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total: ${krsTersimpan.length} mata kuliah ($totalSKS SKS)',
+                  style: blackTextStyle.copyWith(fontSize: 12),
+                ),
+              ],
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ElevatedButton(
-            onPressed: _isSubmitting
-                ? null
-                : () async {
-                    setState(() {
-                      _isSubmitting = true;
-                    });
 
-                    final selectedKrs = <Map<String, dynamic>>[];
+          const SizedBox(height: 16),
 
-                    for (int i = 0; i < isCheckedKrs.length; i++) {
-                      if (isCheckedKrs[i]) {
-                        final krs = krsTersimpan[i];
-                        selectedKrs.add({
-                          "IDMAHASISWA": krs['idmahasiswa'],
-                          "IDMAKUL": krs['idmakul'],
-                          "NAMA": krs['nama'],
-                          "SKS": krs['sks'].toString(),
-                          "THNAJAR": krs['thnajar'],
-                          "SMSTRAJAR": krs['semester'],
-                          "THNSM": krs['thnsm'],
-                          "SEMESTERMAKUL": krs['semestermakul'],
-                          "KELAS": krs['kelas']
-                        });
-                      }
-                    }
+          // Download PDF button
+          // Container(
+          //   width: double.infinity,
+          //   margin: const EdgeInsets.symmetric(horizontal: 16),
+          //   child: ElevatedButton.icon(
+          //     onPressed: () async {
+          //       final hasPermission = await _requestStoragePermission();
+          //       if (!hasPermission) {
+          //         if (mounted) {
+          //           showSnackbar(
+          //             context,
+          //             'Error',
+          //             'Izin penyimpanan diperlukan untuk download PDF',
+          //             'error',
+          //           );
+          //         }
+          //         return;
+          //       }
+          //       await generateKrsStasePdf(context, krsTersimpan);
+          //     },
+          //     icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+          //     label: const Text(
+          //       'Download KRS Stase PDF',
+          //       style: TextStyle(
+          //         color: Colors.white,
+          //         fontSize: 14,
+          //         fontWeight: FontWeight.w600,
+          //       ),
+          //     ),
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: blueDarkColor,
+          //       foregroundColor: Colors.white,
+          //       padding: const EdgeInsets.symmetric(vertical: 8),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(8),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+        ],
 
-                    try {
-                      if (selectedKrs.isNotEmpty) {
-                        await hapusKRSData(selectedKrs);
-                      } else {
-                        showSnackbar(context, 'Info',
-                            'Pilih minimal 1 mata kuliah', 'info');
-                      }
-                    } finally {
-                      if (mounted) {
-                        setState(() {
-                          _isSubmitting = false;
-                        });
-                      }
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isSubmitting ? Colors.grey : Colors.white,
-              foregroundColor: Colors.black,
-              side: const BorderSide(color: Colors.black),
-              minimumSize: const Size.fromHeight(45),
-            ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.black,
-                    ),
-                  )
-                : Text(
-                    'Batalkan Pengajuan KRS',
-                    style: blackTextStyle.copyWith(
-                      fontSize: 12,
-                      fontWeight: semiBold,
-                    ),
-                  ),
-          ),
-        ),
         const SizedBox(height: 16),
       ],
     );
@@ -998,17 +814,25 @@ class InfoColumn extends StatelessWidget {
         Text(
           title,
           style: greyDarkTextStyle.copyWith(
-              fontSize: 14, fontWeight: semiBold, color: Colors.grey.shade600),
+            fontSize: 14,
+            fontWeight: semiBold,
+            color: Colors.grey.shade600,
+          ),
         ),
-        Text(value,
-            style: blackTextStyle.copyWith(fontSize: 16, fontWeight: semiBold)),
+        Text(
+          value,
+          style: blackTextStyle.copyWith(fontSize: 16, fontWeight: semiBold),
+        ),
         const SizedBox(height: 4),
       ],
     );
   }
 }
 
-Future<void> generateKrsPdf(BuildContext context) async {
+Future<void> generateKrsStasePdf(
+  BuildContext context,
+  List<Map<String, dynamic>> krsTersimpan,
+) async {
   try {
     // Show loading dialog
     showDialog(
@@ -1024,29 +848,6 @@ Future<void> generateKrsPdf(BuildContext context) async {
         ),
       ),
     );
-
-    // Fetch data from API
-    final idMahasiswa = await AuthService().getIdMahasiswa();
-    final response = await http.post(
-      Uri.parse('$baseUrl/mahasiswa/cetakkrs'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'id': idMahasiswa}),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load KRS data');
-    }
-
-    final data = jsonDecode(response.body);
-
-    // Extract data from API response
-    final namaMahasiswa = data['nama_mahasiswa'] ?? '-';
-    final npm = data['id_mahasiswa'] ?? '-';
-    final tahunAjaran = data['tahun_ajaran'] ?? '-';
-    final semester = data['semester'] ?? '-';
-    final programStudi = '${data['prodi'] ?? '-'} / ${data['tingkat'] ?? '-'}';
-    final fakultas = data['fakultas'] ?? '-';
-    final matakuliah = data['mata_kuliah'] as List<dynamic>;
 
     // Create PDF document
     final pdf = pw.Document();
@@ -1064,208 +865,179 @@ Future<void> generateKrsPdf(BuildContext context) async {
                 pw.Center(
                   child: pw.Column(
                     children: [
-                      pw.Text(fakultas,
-                          style: pw.TextStyle(
-                              fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                      pw.Text('KARTU RENCANA STUDI',
-                          style: pw.TextStyle(fontSize: 16)),
+                      pw.Text(
+                        'UNIVERSITAS BATAM',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        'KARTU RENCANA STUDI STASE',
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 pw.SizedBox(height: 20),
 
                 // Student Information
-                pw.Table(
-                  border: pw.TableBorder.all(width: 1),
-                  children: [
-                    pw.TableRow(children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('NPM',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(npm),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Program / Jenjang Studi',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(programStudi),
-                      ),
-                    ]),
-                    pw.TableRow(children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Nama',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(namaMahasiswa),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Tahun Akademik',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('$tahunAjaran - $semester'),
-                      ),
-                    ]),
-                  ],
-                ),
-                pw.SizedBox(height: 20),
-
-                // Courses Table
-                pw.Table(
-                  border: pw.TableBorder.all(width: 1),
-                  columnWidths: {
-                    0: const pw.FixedColumnWidth(30), // NO
-                    1: const pw.FixedColumnWidth(100), // KODE
-                    2: const pw.FlexColumnWidth(3), // MATA KULIAH
-                    3: const pw.FixedColumnWidth(50), // SKS
-                  },
-                  children: [
-                    // Header row
-                    pw.TableRow(
-                      decoration:
-                          const pw.BoxDecoration(color: PdfColors.grey300),
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                              child: pw.Text('NO',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                              child: pw.Text('KODE',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                              child: pw.Text('MATA KULIAH',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                              child: pw.Text('SKS',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
-                        ),
-                      ],
-                    ),
-                    // Course rows
-                    ...matakuliah.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final item = entry.value;
-                      return pw.TableRow(
+                if (krsTersimpan.isNotEmpty) ...[
+                  pw.Table(
+                    border: pw.TableBorder.all(width: 1),
+                    children: [
+                      pw.TableRow(
                         children: [
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Center(
-                                child: pw.Text((index + 1).toString())),
+                              child: pw.Text(
+                                'LOKASI',
+                                style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Center(
-                                child: pw.Text(
-                                    item['IDMAKUL']?.toString() ?? '-')),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(item['NAMA']?.toString() ?? '-'),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Center(
-                                child: pw.Text(item['SKS']?.toString() ?? '0')),
+                              child: pw.Text(
+                                'SKS',
+                                style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
-                      );
-                    }).toList(),
-                    // Total SKS row
-                    pw.TableRow(
-                      decoration:
-                          const pw.BoxDecoration(color: PdfColors.grey100),
-                      children: [
-                        pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text('')),
-                        pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text('')),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                            child: pw.Text('JUMLAH SKS',
-                                style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold)),
-                          ),
+                      ),
+                      // Stase rows
+                      ...krsTersimpan.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        return pw.TableRow(
+                          children: [
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Center(
+                                child: pw.Text((index + 1).toString()),
+                              ),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Center(
+                                child: pw.Text(
+                                  item['IDMAKUL']?.toString() ?? '-',
+                                ),
+                              ),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text(item['NAMA']?.toString() ?? '-'),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text(item['LOKASI']?.toString() ?? '-'),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Center(
+                                child: pw.Text(item['SKS']?.toString() ?? '0'),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                      // Total SKS row
+                      pw.TableRow(
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.grey100,
                         ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Center(
-                            child: pw.Text(
-                                matakuliah
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(''),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(''),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Center(
+                              child: pw.Text(
+                                'JUMLAH SKS',
+                                style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(''),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Center(
+                              child: pw.Text(
+                                krsTersimpan
                                     .fold(
-                                        0,
-                                        (sum, item) =>
-                                            sum +
-                                            int.parse(
-                                                item['SKS']?.toString() ?? '0'))
+                                      0,
+                                      (sum, item) =>
+                                          sum +
+                                          int.parse(
+                                            item['SKS']?.toString() ?? '0',
+                                          ),
+                                    )
                                     .toString(),
                                 style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold)),
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 40),
+                        ],
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 40),
 
-                // Signature section
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('Pembimbing Akademik'),
-                        pw.SizedBox(height: 60),
-                        pw.Text('(....................................)'),
-                      ],
-                    ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text(
-                            'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}'),
-                        pw.Text('Mahasiswa'),
-                        pw.SizedBox(height: 60),
-                        pw.Text(namaMahasiswa),
-                      ],
-                    ),
-                  ],
-                ),
+                  // Signature section
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Koordinator Stase'),
+                          pw.SizedBox(height: 60),
+                          pw.Text('(....................................)'),
+                        ],
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}',
+                          ),
+                          pw.Text('Mahasiswa'),
+                          pw.SizedBox(height: 60),
+                          pw.Text(
+                            krsTersimpan.isNotEmpty
+                                ? krsTersimpan.first['IDMAHASISWA']
+                                : '',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           );
@@ -1275,10 +1047,10 @@ Future<void> generateKrsPdf(BuildContext context) async {
 
     // Save PDF to storage
     final directory = await getExternalStorageDirectory();
-    final folderPath = '${directory?.path}/KRS';
+    final folderPath = '${directory?.path}/KRS_Stase';
     await Directory(folderPath).create(recursive: true);
 
-    final fileName = 'KRS_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final fileName = 'KRS_Stase_${DateTime.now().millisecondsSinceEpoch}.pdf';
     final file = File('$folderPath/$fileName');
     await file.writeAsBytes(await pdf.save());
 
@@ -1353,30 +1125,7 @@ String _getMonthName(int month) {
     'September',
     'Oktober',
     'November',
-    'Desember'
+    'Desember',
   ];
   return months[month - 1];
 }
-
-// Alternatif menggunakan Printing.sharePdf
-// Future<void> generateAndShareKrsPdf(
-//     BuildContext context, List<Map<String, dynamic>> krsTersimpan) async {
-//   try {
-//     final pdf = pw.Document();
-
-//     // ... sama seperti fungsi di atas ...
-
-//     // Share atau print PDF
-//     await Printing.sharePdf(
-//       bytes: await pdf.save(),
-//       filename: 'KRS_${DateTime.now().millisecondsSinceEpoch}.pdf',
-//     );
-//   } catch (e) {
-//     debugPrint('Error: $e');
-//     if (context.mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Gagal membuat PDF: $e')),
-//       );
-//     }
-//   }
-// }

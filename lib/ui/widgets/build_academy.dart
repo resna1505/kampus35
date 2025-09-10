@@ -45,9 +45,7 @@ class _BuildAcademyState extends State<BuildAcademy> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: whiteColor,
-      ),
+      decoration: BoxDecoration(color: whiteColor),
       child: _isLoading
           ? Container(
               alignment: Alignment.centerLeft,
@@ -57,55 +55,29 @@ class _BuildAcademyState extends State<BuildAcademy> {
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Skeleton(
-                      height: 12,
-                      width: 180,
-                    ),
+                    Skeleton(height: 12, width: 180),
                     SizedBox(height: 8),
-                    Skeleton(
-                      height: 12,
-                      width: 210,
-                    ),
+                    Skeleton(height: 12, width: 210),
                     SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                         SizedBox(width: 14),
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                         SizedBox(width: 14),
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                       ],
                     ),
-                    SizedBox(
-                      height: 8,
-                    ),
+                    SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                         SizedBox(width: 14),
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                         SizedBox(width: 14),
-                        Skeleton(
-                          height: 90,
-                          width: 90,
-                        ),
+                        Skeleton(height: 90, width: 90),
                       ],
                     ),
                   ],
@@ -124,13 +96,9 @@ class _BuildAcademyState extends State<BuildAcademy> {
                 ),
                 Text(
                   'Your easy access of academy needs',
-                  style: greyTextStyle.copyWith(
-                    fontSize: 12,
-                  ),
+                  style: greyTextStyle.copyWith(fontSize: 12),
                 ),
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -160,9 +128,7 @@ class _BuildAcademyState extends State<BuildAcademy> {
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 12,
-                ),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -192,9 +158,7 @@ class _BuildAcademyState extends State<BuildAcademy> {
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 12,
-                ),
+                const SizedBox(height: 12),
                 // Row(
                 //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 //   children: [
@@ -243,7 +207,7 @@ class _BuildAcademyState extends State<BuildAcademy> {
                   )
                 else
                   Row(
-                    // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       HomeAcademyItem(
                         iconUrl: 'assets/ic_input_krs.png',
@@ -259,11 +223,13 @@ class _BuildAcademyState extends State<BuildAcademy> {
                         color: const Color(0xffE2E3E4),
                         onTap: () {
                           Navigator.pushNamed(
-                              context, '/input-krs-stase-remedial');
+                            context,
+                            '/input-krs-stase-remedial',
+                          );
                         },
                       ),
                     ],
-                  )
+                  ),
               ],
             ),
     );
