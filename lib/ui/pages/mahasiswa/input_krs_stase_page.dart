@@ -849,6 +849,32 @@ Future<void> generateKrsStasePdf(
       ),
     );
 
+    // Fetch data from API
+    final idMahasiswa = await AuthService().getIdMahasiswa();
+    final url = Uri.parse('$baseUrl/mahasiswa/cetakkrsprofesi');
+
+    final request = http.Request('GET', url);
+    request.headers['Content-Type'] = 'application/json';
+    request.body = jsonEncode({'id': idMahasiswa});
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load KRS Stase data');
+    }
+
+    final data = jsonDecode(response.body);
+
+    // Extract data from API response
+    final namaMahasiswa = data['nama_mahasiswa'] ?? '-';
+    final npm = data['id_mahasiswa'] ?? '-';
+    final tahunAjaran = data['tahun_ajaran'] ?? '-';
+    final semester = data['semester'] ?? '-';
+    final programStudi = '${data['prodi'] ?? '-'} / ${data['tingkat'] ?? '-'}';
+    final fakultas = data['fakultas'] ?? '-';
+    final matakuliah = data['mata_kuliah'] as List<dynamic>;
+
     // Create PDF document
     final pdf = pw.Document();
 
@@ -866,7 +892,7 @@ Future<void> generateKrsStasePdf(
                   child: pw.Column(
                     children: [
                       pw.Text(
-                        'UNIVERSITAS BATAM',
+                        fakultas,
                         style: pw.TextStyle(
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold,
@@ -885,159 +911,237 @@ Future<void> generateKrsStasePdf(
                 pw.SizedBox(height: 20),
 
                 // Student Information
-                if (krsTersimpan.isNotEmpty) ...[
-                  pw.Table(
-                    border: pw.TableBorder.all(width: 1),
-                    children: [
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                'LOKASI',
-                                style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                pw.Table(
+                  border: pw.TableBorder.all(width: 1),
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'NPM',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                           ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                'SKS',
-                                style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Stase rows
-                      ...krsTersimpan.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        return pw.TableRow(
-                          children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Center(
-                                child: pw.Text((index + 1).toString()),
-                              ),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Center(
-                                child: pw.Text(
-                                  item['IDMAKUL']?.toString() ?? '-',
-                                ),
-                              ),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text(item['NAMA']?.toString() ?? '-'),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text(item['LOKASI']?.toString() ?? '-'),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Center(
-                                child: pw.Text(item['SKS']?.toString() ?? '0'),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                      // Total SKS row
-                      pw.TableRow(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.grey100,
                         ),
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(''),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(npm),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Program / Jenjang Studi',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                           ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(programStudi),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Nama',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                           ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                'JUMLAH SKS',
-                                style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(namaMahasiswa),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Tahun Akademik',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                           ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(''),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Center(
-                              child: pw.Text(
-                                krsTersimpan
-                                    .fold(
-                                      0,
-                                      (sum, item) =>
-                                          sum +
-                                          int.parse(
-                                            item['SKS']?.toString() ?? '0',
-                                          ),
-                                    )
-                                    .toString(),
-                                style: pw.TextStyle(
-                                  fontWeight: pw.FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 40),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('$tahunAjaran - $semester'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
 
-                  // Signature section
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text('Koordinator Stase'),
-                          pw.SizedBox(height: 60),
-                          pw.Text('(....................................)'),
-                        ],
+                // Stase Table
+                pw.Table(
+                  border: pw.TableBorder.all(width: 1),
+                  columnWidths: {
+                    0: const pw.FixedColumnWidth(30), // NO
+                    1: const pw.FixedColumnWidth(100), // KODE
+                    2: const pw.FlexColumnWidth(3), // MATA KULIAH STASE
+                    3: const pw.FixedColumnWidth(50), // SKS
+                  },
+                  children: [
+                    // Header row
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey300,
                       ),
-                      pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.end,
-                        children: [
-                          pw.Text(
-                            'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}',
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'NO',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          pw.Text('Mahasiswa'),
-                          pw.SizedBox(height: 60),
-                          pw.Text(
-                            krsTersimpan.isNotEmpty
-                                ? krsTersimpan.first['IDMAHASISWA']
-                                : '',
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'KODE',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'MATA KULIAH STASE',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'SKS',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Stase rows
+                    ...matakuliah.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      return pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Center(
+                              child: pw.Text((index + 1).toString()),
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Center(
+                              child: pw.Text(
+                                item['IDMAKUL']?.toString() ?? '-',
+                              ),
+                            ),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(item['NAMA']?.toString() ?? '-'),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Center(
+                              child: pw.Text(item['SKS']?.toString() ?? '0'),
+                            ),
                           ),
                         ],
+                      );
+                    }).toList(),
+                    // Total SKS row
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey100,
                       ),
-                    ],
-                  ),
-                ],
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'JUMLAH SKS',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Center(
+                            child: pw.Text(
+                              matakuliah
+                                  .fold(
+                                    0,
+                                    (sum, item) =>
+                                        sum +
+                                        int.parse(
+                                          item['SKS']?.toString() ?? '0',
+                                        ),
+                                  )
+                                  .toString(),
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 40),
+
+                // Signature section
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Koordinator Stase'),
+                        pw.SizedBox(height: 60),
+                        pw.Text('(....................................)'),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}',
+                        ),
+                        pw.Text('Mahasiswa'),
+                        pw.SizedBox(height: 60),
+                        pw.Text(namaMahasiswa),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
           );
