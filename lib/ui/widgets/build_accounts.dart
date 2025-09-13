@@ -25,7 +25,11 @@ class BuildAccounts extends StatelessWidget {
             (route) => false,
           );
           showSnackbar(
-              context, 'Success', 'Anda telah berhasil logout.', 'success');
+            context,
+            'Success',
+            'Anda telah berhasil logout.',
+            'success',
+          );
         }
       },
       builder: (context, state) {
@@ -39,9 +43,7 @@ class BuildAccounts extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const SizedBox(
-                  height: 12,
-                ),
+                const SizedBox(height: 12),
                 Column(
                   children: [
                     GestureDetector(
@@ -63,14 +65,10 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 18,
-                            ),
+                            const SizedBox(width: 18),
                             Text(
                               'Manage Account',
-                              style: blackTextStyle.copyWith(
-                                fontSize: 16,
-                              ),
+                              style: blackTextStyle.copyWith(fontSize: 16),
                             ),
                             const Spacer(),
                             Icon(
@@ -78,9 +76,7 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 8,
-                            )
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -106,14 +102,10 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 18,
-                            ),
+                            const SizedBox(width: 18),
                             Text(
                               'Privacy Policy',
-                              style: blackTextStyle.copyWith(
-                                fontSize: 16,
-                              ),
+                              style: blackTextStyle.copyWith(fontSize: 16),
                             ),
                             const Spacer(),
                             Icon(
@@ -121,9 +113,7 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 8,
-                            )
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -132,7 +122,7 @@ class BuildAccounts extends StatelessWidget {
                       onTap: () {
                         // Navigator.pushNamed(context, '/login-page');
                         context.read<AuthBloc>().add(AuthLogout());
-                        auhtProvider.signOut();
+                        // auhtProvider.signOut();
                       },
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -149,14 +139,10 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 18,
-                            ),
+                            const SizedBox(width: 18),
                             Text(
                               'Log Out',
-                              style: blackTextStyle.copyWith(
-                                fontSize: 16,
-                              ),
+                              style: blackTextStyle.copyWith(fontSize: 16),
                             ),
                             const Spacer(),
                             Icon(
@@ -164,15 +150,13 @@ class BuildAccounts extends StatelessWidget {
                               color: purpleColor,
                               size: 18,
                             ),
-                            const SizedBox(
-                              width: 8,
-                            )
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           );

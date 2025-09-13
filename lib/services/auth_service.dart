@@ -36,18 +36,15 @@ class AuthService {
     try {
       final token = await getToken();
       final res = await http.post(
-          Uri.parse(
-            '$baseUrl/logout',
-          ),
-          headers: {
-            'Authorization': token,
-          });
+        Uri.parse('$baseUrl/mahasiswa/logout'),
+        headers: {'Authorization': token},
+      );
 
-      if (res.statusCode == 200) {
-        await clearLocalStorage();
-      } else {
-        throw jsonDecode(res.body)['message'];
-      }
+      // if (res.statusCode == 200) {
+      await clearLocalStorage();
+      // } else {
+      //   throw jsonDecode(res.body)['message'];
+      // }
     } catch (e) {
       rethrow;
     }
@@ -76,9 +73,10 @@ class AuthService {
         throw 'authenticated';
       } else {
         final SignInFormModel data = SignInFormModel(
-            email: values['email'],
-            password: values['password'],
-            consoleId: values['consoleId']);
+          email: values['email'],
+          password: values['password'],
+          consoleId: values['consoleId'],
+        );
         return data;
       }
     } catch (e) {

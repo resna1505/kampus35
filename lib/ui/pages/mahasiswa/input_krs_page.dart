@@ -63,10 +63,7 @@ class _InputKRSState extends State<InputKRS> {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
           kelasOptions = data.map<Map<String, dynamic>>((item) {
-            return {
-              'ID': item['ID'] ?? '-',
-              'NAMA': item['NAMA'] ?? '-',
-            };
+            return {'ID': item['ID'] ?? '-', 'NAMA': item['NAMA'] ?? '-'};
           }).toList();
         });
       } else {
@@ -90,9 +87,7 @@ class _InputKRSState extends State<InputKRS> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id': idmhs,
-        }),
+        body: jsonEncode({'id': idmhs}),
       );
 
       if (response.statusCode == 200) {
@@ -144,9 +139,7 @@ class _InputKRSState extends State<InputKRS> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'id': idmhs,
-        }),
+        body: jsonEncode({'id': idmhs}),
       );
 
       if (response.statusCode == 200) {
@@ -177,8 +170,12 @@ class _InputKRSState extends State<InputKRS> {
       } else {
         final data = jsonDecode(response.body);
         if (mounted) {
-          showSnackbar(context, 'Info',
-              data['messages']['error'] ?? 'Terjadi kesalahan', 'info');
+          showSnackbar(
+            context,
+            'Info',
+            data['messages']['error'] ?? 'Terjadi kesalahan',
+            'info',
+          );
         }
       }
     } catch (e) {
@@ -240,8 +237,9 @@ class _InputKRSState extends State<InputKRS> {
         final responseData = jsonDecode(response.body);
 
         if (responseData['flag'] == 1) {
-          final confirm =
-              await showKRSConfirmationModal(responseData['message']);
+          final confirm = await showKRSConfirmationModal(
+            responseData['message'],
+          );
 
           if (!confirm) return;
 
@@ -256,7 +254,11 @@ class _InputKRSState extends State<InputKRS> {
             final confirmData = jsonDecode(confirmResponse.body);
             if (mounted) {
               showSnackbar(
-                  context, 'Success', confirmData['message'], 'success');
+                context,
+                'Success',
+                confirmData['message'],
+                'success',
+              );
               fetchKRSTersimpan();
             }
           } else {
@@ -269,8 +271,12 @@ class _InputKRSState extends State<InputKRS> {
         }
 
         if (mounted) {
-          showSnackbar(context, 'Success', responseData['message'].toString(),
-              'success');
+          showSnackbar(
+            context,
+            'Success',
+            responseData['message'].toString(),
+            'success',
+          );
           fetchKRSTersimpan();
         }
       } else {
@@ -300,8 +306,12 @@ class _InputKRSState extends State<InputKRS> {
         final responseData = jsonDecode(response.body);
 
         if (mounted) {
-          showSnackbar(context, 'Success', responseData['message'].toString(),
-              'success');
+          showSnackbar(
+            context,
+            'Success',
+            responseData['message'].toString(),
+            'success',
+          );
         }
         fetchKRSTersimpan();
       } else {
@@ -343,9 +353,7 @@ class _InputKRSState extends State<InputKRS> {
                   Center(
                     child: Text(
                       message,
-                      style: blackTextStyle.copyWith(
-                        fontSize: 12,
-                      ),
+                      style: blackTextStyle.copyWith(fontSize: 12),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -390,7 +398,7 @@ class _InputKRSState extends State<InputKRS> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );
@@ -417,10 +425,7 @@ class _InputKRSState extends State<InputKRS> {
         backgroundColor: whiteColor,
         title: Text(
           'Kartu Rencana Studi',
-          style: blackTextStyle.copyWith(
-            fontSize: 18,
-            fontWeight: semiBold,
-          ),
+          style: blackTextStyle.copyWith(fontSize: 18, fontWeight: semiBold),
         ),
       ),
       body: Column(
@@ -448,8 +453,8 @@ class _InputKRSState extends State<InputKRS> {
           // Tabs
           Row(
             children: [
-              _buildTabButton('PILIH KRS', 0),
-              _buildTabButton('KRS TERSIMPAN', 1),
+              _buildTabButton('PILIH MATA KULIAH', 0),
+              _buildTabButton('MATA KULIAH TERSIMPAN', 1),
             ],
           ),
 
@@ -475,10 +480,7 @@ class _InputKRSState extends State<InputKRS> {
             child: Text(
               title,
               style: (selectedTab == tabIndex ? whiteTextStyle : blackTextStyle)
-                  .copyWith(
-                fontSize: 14,
-                fontWeight: semiBold,
-              ),
+                  .copyWith(fontSize: 14, fontWeight: semiBold),
             ),
           ),
         ),
@@ -546,15 +548,25 @@ class _InputKRSState extends State<InputKRS> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item['nama'],
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12, fontWeight: semiBold)),
-                                  Text('SKS ${item['sks']} • ${item['id']}',
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12)),
-                                  Text('Semester ${item['semester']}',
-                                      style: blackTextStyle.copyWith(
-                                          fontSize: 12)),
+                                  Text(
+                                    item['nama'],
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: semiBold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'SKS ${item['sks']} • ${item['id']}',
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Semester ${item['semester']}',
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -628,8 +640,12 @@ class _InputKRSState extends State<InputKRS> {
                           if (selectedCourses.isNotEmpty) {
                             await postKRSData(selectedCourses);
                           } else {
-                            showSnackbar(context, 'Info',
-                                'Pilih minimal 1 mata kuliah', 'info');
+                            showSnackbar(
+                              context,
+                              'Info',
+                              'Pilih minimal 1 mata kuliah',
+                              'info',
+                            );
                           }
                         } finally {
                           if (mounted) {
@@ -640,8 +656,9 @@ class _InputKRSState extends State<InputKRS> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _isSubmitting ? Colors.green[300] : Colors.green,
+                  backgroundColor: _isSubmitting
+                      ? Colors.green[300]
+                      : Colors.green,
                   foregroundColor: whiteColor,
                 ),
                 child: _isSubmitting
@@ -660,10 +677,10 @@ class _InputKRSState extends State<InputKRS> {
                           fontWeight: semiBold,
                         ),
                       ),
-              )
+              ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
@@ -844,9 +861,7 @@ class _InputKRSState extends State<InputKRS> {
             ],
           ),
         ),
-        const SizedBox(
-          height: 8,
-        ),
+        const SizedBox(height: 8),
         // ElevatedButton.icon(
         //   icon: const Icon(Icons.download),
         //   label: const Text('Download PDF KRS'),
@@ -880,16 +895,15 @@ class _InputKRSState extends State<InputKRS> {
                     if (!hasPermission) {
                       if (mounted) {
                         showSnackbar(
-                            context,
-                            'Error',
-                            'Izin penyimpanan diperlukan untuk download PDF',
-                            'error');
+                          context,
+                          'Error',
+                          'Izin penyimpanan diperlukan untuk download PDF',
+                          'error',
+                        );
                       }
                       return;
                     }
-                    await generateKrsPdf(
-                      context,
-                    );
+                    await generateKrsPdf(context);
                   },
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             label: const Text(
@@ -901,8 +915,9 @@ class _InputKRSState extends State<InputKRS> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  krsTersimpan.isEmpty ? Colors.grey : blueDarkColor,
+              backgroundColor: krsTersimpan.isEmpty
+                  ? Colors.grey
+                  : blueDarkColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
@@ -935,7 +950,7 @@ class _InputKRSState extends State<InputKRS> {
                           "SMSTRAJAR": krs['semester'],
                           "THNSM": krs['thnsm'],
                           "SEMESTERMAKUL": krs['semestermakul'],
-                          "KELAS": krs['kelas']
+                          "KELAS": krs['kelas'],
                         });
                       }
                     }
@@ -944,8 +959,12 @@ class _InputKRSState extends State<InputKRS> {
                       if (selectedKrs.isNotEmpty) {
                         await hapusKRSData(selectedKrs);
                       } else {
-                        showSnackbar(context, 'Info',
-                            'Pilih minimal 1 mata kuliah', 'info');
+                        showSnackbar(
+                          context,
+                          'Info',
+                          'Pilih minimal 1 mata kuliah',
+                          'info',
+                        );
                       }
                     } finally {
                       if (mounted) {
@@ -998,10 +1017,15 @@ class InfoColumn extends StatelessWidget {
         Text(
           title,
           style: greyDarkTextStyle.copyWith(
-              fontSize: 14, fontWeight: semiBold, color: Colors.grey.shade600),
+            fontSize: 14,
+            fontWeight: semiBold,
+            color: Colors.grey.shade600,
+          ),
         ),
-        Text(value,
-            style: blackTextStyle.copyWith(fontSize: 16, fontWeight: semiBold)),
+        Text(
+          value,
+          style: blackTextStyle.copyWith(fontSize: 16, fontWeight: semiBold),
+        ),
         const SizedBox(height: 4),
       ],
     );
@@ -1064,11 +1088,17 @@ Future<void> generateKrsPdf(BuildContext context) async {
                 pw.Center(
                   child: pw.Column(
                     children: [
-                      pw.Text(fakultas,
-                          style: pw.TextStyle(
-                              fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                      pw.Text('KARTU RENCANA STUDI',
-                          style: pw.TextStyle(fontSize: 16)),
+                      pw.Text(
+                        fakultas,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        'KARTU RENCANA STUDI',
+                        style: pw.TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                 ),
@@ -1078,50 +1108,58 @@ Future<void> generateKrsPdf(BuildContext context) async {
                 pw.Table(
                   border: pw.TableBorder.all(width: 1),
                   children: [
-                    pw.TableRow(children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('NPM',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(npm),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Program / Jenjang Studi',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(programStudi),
-                      ),
-                    ]),
-                    pw.TableRow(children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Nama',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(namaMahasiswa),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('Tahun Akademik',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text('$tahunAjaran - $semester'),
-                      ),
-                    ]),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'NPM',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(npm),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Program / Jenjang Studi',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(programStudi),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Nama',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(namaMahasiswa),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Tahun Akademik',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('$tahunAjaran - $semester'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 pw.SizedBox(height: 20),
@@ -1138,36 +1176,53 @@ Future<void> generateKrsPdf(BuildContext context) async {
                   children: [
                     // Header row
                     pw.TableRow(
-                      decoration:
-                          const pw.BoxDecoration(color: PdfColors.grey300),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey300,
+                      ),
                       children: [
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
-                              child: pw.Text('NO',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
+                            child: pw.Text(
+                              'NO',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
-                              child: pw.Text('KODE',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
+                            child: pw.Text(
+                              'KODE',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
-                              child: pw.Text('MATA KULIAH',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
+                            child: pw.Text(
+                              'MATA KULIAH',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
-                              child: pw.Text('SKS',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold))),
+                            child: pw.Text(
+                              'SKS',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -1180,13 +1235,16 @@ Future<void> generateKrsPdf(BuildContext context) async {
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Center(
-                                child: pw.Text((index + 1).toString())),
+                              child: pw.Text((index + 1).toString()),
+                            ),
                           ),
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Center(
-                                child: pw.Text(
-                                    item['IDMAKUL']?.toString() ?? '-')),
+                              child: pw.Text(
+                                item['IDMAKUL']?.toString() ?? '-',
+                              ),
+                            ),
                           ),
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
@@ -1195,44 +1253,55 @@ Future<void> generateKrsPdf(BuildContext context) async {
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Center(
-                                child: pw.Text(item['SKS']?.toString() ?? '0')),
+                              child: pw.Text(item['SKS']?.toString() ?? '0'),
+                            ),
                           ),
                         ],
                       );
                     }).toList(),
                     // Total SKS row
                     pw.TableRow(
-                      decoration:
-                          const pw.BoxDecoration(color: PdfColors.grey100),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey100,
+                      ),
                       children: [
                         pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text('')),
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(''),
+                        ),
                         pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text('')),
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(''),
+                        ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
-                            child: pw.Text('JUMLAH SKS',
-                                style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold)),
+                            child: pw.Text(
+                              'JUMLAH SKS',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Center(
                             child: pw.Text(
-                                matakuliah
-                                    .fold(
-                                        0,
-                                        (sum, item) =>
-                                            sum +
-                                            int.parse(
-                                                item['SKS']?.toString() ?? '0'))
-                                    .toString(),
-                                style: pw.TextStyle(
-                                    fontWeight: pw.FontWeight.bold)),
+                              matakuliah
+                                  .fold(
+                                    0,
+                                    (sum, item) =>
+                                        sum +
+                                        int.parse(
+                                          item['SKS']?.toString() ?? '0',
+                                        ),
+                                  )
+                                  .toString(),
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -1258,7 +1327,8 @@ Future<void> generateKrsPdf(BuildContext context) async {
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
                         pw.Text(
-                            'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}'),
+                          'Batam, ${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year}',
+                        ),
                         pw.Text('Mahasiswa'),
                         pw.SizedBox(height: 60),
                         pw.Text(namaMahasiswa),
@@ -1353,7 +1423,7 @@ String _getMonthName(int month) {
     'September',
     'Oktober',
     'November',
-    'Desember'
+    'Desember',
   ];
   return months[month - 1];
 }

@@ -79,7 +79,7 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
 
   Future<void> fetchKRSData() async {
     final idmhs = await AuthService().getIdMahasiswa();
-    final url = Uri.parse('$baseUrl/mahasiswa/isikrsprofesi');
+    final url = Uri.parse('$baseUrl/mahasiswa/isikrsremedialprofesi');
 
     try {
       final request = http.Request('GET', url);
@@ -339,9 +339,9 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  InfoColumn(title: 'Periode', value: periodeAkademik),
+                  InfoColumn(title: 'Tahun Ajaran', value: periodeAkademik),
                   InfoColumn(title: 'Semester', value: semester),
-                  InfoColumn(title: 'Batas SKS', value: batasSKS),
+                  // InfoColumn(title: 'Batas SKS', value: batasSKS),
                 ],
               ),
             ),
@@ -350,8 +350,8 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
           // Tabs
           Row(
             children: [
-              _buildTabButton('PILIH KRS STASE', 0),
-              _buildTabButton('KRS TERSIMPAN', 1),
+              _buildTabButton('PILIH MATA KULIAH', 0),
+              _buildTabButton('MATA KULIAH TERSIMPAN', 1),
             ],
           ),
 
@@ -755,44 +755,44 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
           const SizedBox(height: 16),
 
           // Download PDF button
-          // Container(
-          //   width: double.infinity,
-          //   margin: const EdgeInsets.symmetric(horizontal: 16),
-          //   child: ElevatedButton.icon(
-          //     onPressed: () async {
-          //       final hasPermission = await _requestStoragePermission();
-          //       if (!hasPermission) {
-          //         if (mounted) {
-          //           showSnackbar(
-          //             context,
-          //             'Error',
-          //             'Izin penyimpanan diperlukan untuk download PDF',
-          //             'error',
-          //           );
-          //         }
-          //         return;
-          //       }
-          //       await generateKrsStasePdf(context, krsTersimpan);
-          //     },
-          //     icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-          //     label: const Text(
-          //       'Download KRS Stase PDF',
-          //       style: TextStyle(
-          //         color: Colors.white,
-          //         fontSize: 14,
-          //         fontWeight: FontWeight.w600,
-          //       ),
-          //     ),
-          //     style: ElevatedButton.styleFrom(
-          //       backgroundColor: blueDarkColor,
-          //       foregroundColor: Colors.white,
-          //       padding: const EdgeInsets.symmetric(vertical: 8),
-          //       shape: RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.circular(8),
-          //       ),
-          //     ),
-          //   ),
-          // ),
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final hasPermission = await _requestStoragePermission();
+                if (!hasPermission) {
+                  if (mounted) {
+                    showSnackbar(
+                      context,
+                      'Error',
+                      'Izin penyimpanan diperlukan untuk download PDF',
+                      'error',
+                    );
+                  }
+                  return;
+                }
+                await generateKrsStasePdf(context, krsTersimpan);
+              },
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+              label: const Text(
+                'Download KRS Stase PDF',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: blueDarkColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
         ],
 
         const SizedBox(height: 16),
