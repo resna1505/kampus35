@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 
 class InputKRSStase extends StatefulWidget {
   const InputKRSStase({super.key});
@@ -206,7 +205,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
       "idmahasiswa": selectedMatkul['idmahasiswa'],
       "tahunajaran": selectedMatkul['tahunajaran'],
       "semesterajaran": selectedMatkul['semesterajaran'],
-      "KELAS": "01", // Default class
+      "KELAS": "01",
       "lokasimakul": selectedLokasiId,
     };
 
@@ -228,7 +227,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
               responseData['message'],
               'success',
             );
-            await fetchKRSTersimpan(); // Refresh data tersimpan
+            await fetchKRSTersimpan();
             setState(() {
               selectedMataKuliahIndex = null;
               selectedLokasiId = null;
@@ -283,7 +282,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
               responseData['message'],
               'success',
             );
-            await fetchKRSTersimpan(); // Refresh data
+            await fetchKRSTersimpan();
           }
         } else {
           if (mounted) {
@@ -341,7 +340,6 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                 children: [
                   InfoColumn(title: 'Tahun Ajaran', value: periodeAkademik),
                   InfoColumn(title: 'Semester', value: semester),
-                  // InfoColumn(title: 'Batas SKS', value: batasSKS),
                 ],
               ),
             ),
@@ -455,8 +453,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                                   onChanged: (value) {
                                     setState(() {
                                       selectedMataKuliahIndex = value;
-                                      selectedLokasiId =
-                                          null; // Reset lokasi selection
+                                      selectedLokasiId = null;
                                     });
                                   },
                                 ),
@@ -630,79 +627,70 @@ class _InputKRSStaseState extends State<InputKRSStase> {
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['NAMA'],
-                                        style: blackTextStyle.copyWith(
-                                          fontSize: 14,
-                                          fontWeight: semiBold,
-                                        ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['NAMA'],
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 14,
+                                      fontWeight: semiBold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'SKS: ${item['SKS']} • Kode: ${item['IDMAKUL']}',
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Lokasi: ${item['LOKASI']} • Kelas: ${item['KELAS']}',
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Semester: ${item['SEMESTERMAKUL']} • ${item['THNAJAR']}',
+                                    style: blackTextStyle.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Konfirmasi'),
+                                    content: Text(
+                                      'Hapus mata kuliah ${item['NAMA']}?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Batal'),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'SKS: ${item['SKS']} • Kode: ${item['IDMAKUL']}',
-                                        style: blackTextStyle.copyWith(
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Lokasi: ${item['LOKASI']} • Kelas: ${item['KELAS']}',
-                                        style: blackTextStyle.copyWith(
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Semester: ${item['SEMESTERMAKUL']} • ${item['THNAJAR']}',
-                                        style: blackTextStyle.copyWith(
-                                          fontSize: 12,
-                                        ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Hapus'),
                                       ),
                                     ],
                                   ),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Konfirmasi'),
-                                        content: Text(
-                                          'Hapus mata kuliah ${item['NAMA']}?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: const Text('Batal'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: const Text('Hapus'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                );
 
-                                    if (confirm == true) {
-                                      await hapusKRSData(item);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ],
+                                if (confirm == true) {
+                                  await hapusKRSData(item);
+                                }
+                              },
+                              icon: const Icon(Icons.delete, color: Colors.red),
                             ),
                           ],
                         ),
@@ -760,19 +748,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton.icon(
               onPressed: () async {
-                final hasPermission = await _requestStoragePermission();
-                if (!hasPermission) {
-                  if (mounted) {
-                    showSnackbar(
-                      context,
-                      'Error',
-                      'Izin penyimpanan diperlukan untuk download PDF',
-                      'error',
-                    );
-                  }
-                  return;
-                }
-                await generateKrsStasePdf(context, krsTersimpan);
+                await generateKrsStasePdf(context);
               },
               icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
               label: const Text(
@@ -829,10 +805,7 @@ class InfoColumn extends StatelessWidget {
   }
 }
 
-Future<void> generateKrsStasePdf(
-  BuildContext context,
-  List<Map<String, dynamic>> krsTersimpan,
-) async {
+Future<void> generateKrsStasePdf(BuildContext context) async {
   try {
     // Show loading dialog
     showDialog(
@@ -1149,13 +1122,10 @@ Future<void> generateKrsStasePdf(
       ),
     );
 
-    // Save PDF to storage
-    final directory = await getExternalStorageDirectory();
-    final folderPath = '${directory?.path}/KRS_Stase';
-    await Directory(folderPath).create(recursive: true);
-
+    // Save PDF to internal app directory (tidak perlu permission)
+    final directory = await getApplicationDocumentsDirectory();
     final fileName = 'KRS_Stase_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('$folderPath/$fileName');
+    final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
 
     // Close loading dialog
@@ -1169,7 +1139,7 @@ Future<void> generateKrsStasePdf(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('PDF Berhasil Dibuat'),
-          content: Text('File tersimpan di: $folderPath/$fileName'),
+          content: Text('File tersimpan di: ${directory.path}/$fileName'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -1206,14 +1176,6 @@ Future<void> generateKrsStasePdf(
     }
     debugPrint('Error generating PDF: $e');
   }
-}
-
-Future<bool> _requestStoragePermission() async {
-  if (Platform.isAndroid) {
-    final status = await Permission.storage.request();
-    return status.isGranted;
-  }
-  return true;
 }
 
 String _getMonthName(int month) {

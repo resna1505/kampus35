@@ -7,7 +7,7 @@ import 'package:kampus/ui/widgets/home_to_do.dart';
 import 'package:kampus/ui/widgets/no_data.dart';
 import 'package:kampus/ui/widgets/skeleton.dart';
 import 'package:permission_handler/permission_handler.dart';
-// import 'package:qrscan/qrscan.dart' as scanner;
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shimmer/shimmer.dart';
 
 class BuildAbsence extends StatefulWidget {
@@ -75,40 +75,40 @@ class _BuildAbsenceState extends State<BuildAbsence> {
                             permissionStatus = await Permission.camera
                                 .request();
                           }
-                          // if (permissionStatus == PermissionStatus.granted) {
-                          //   String? cameraScanResult = await scanner.scan();
 
-                          //   if (cameraScanResult != null &&
-                          //       cameraScanResult.isNotEmpty) {
-                          //     Navigator.pushNamed(
-                          //       context,
-                          //       '/confirm-absent',
-                          //       arguments: {
-                          //         'namamakul': absenceMethod.namamakul,
-                          //         'idmakul': absenceMethod.idmakul,
-                          //         'idruangan': cameraScanResult,
-                          //         'semester': absenceMethod.semester,
-                          //         'tahun': absenceMethod.tahun,
-                          //       },
-                          //     );
-                          //   } else {
-                          //     // showCustomSnackbar(
-                          //     //   context,
-                          //     //   'Hasil scan tidak valid. Silakan coba lagi.',
-                          //     // );
-                          //     showSnackbar(
-                          //       context,
-                          //       'Info',
-                          //       'Hasil scan tidak valid. Silakan coba lagi.',
-                          //       'info',
-                          //     );
-                          //   }
-                          // }
+                          if (permissionStatus == PermissionStatus.granted) {
+                            // Navigasi ke halaman scanner
+                            String? cameraScanResult =
+                                await Navigator.push<String>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const QRScannerPage(),
+                                  ),
+                                );
+
+                            if (cameraScanResult != null &&
+                                cameraScanResult.isNotEmpty) {
+                              Navigator.pushNamed(
+                                context,
+                                '/confirm-absent',
+                                arguments: {
+                                  'namamakul': absenceMethod.namamakul,
+                                  'idmakul': absenceMethod.idmakul,
+                                  'idruangan': cameraScanResult,
+                                  'semester': absenceMethod.semester,
+                                  'tahun': absenceMethod.tahun,
+                                },
+                              );
+                            } else {
+                              showSnackbar(
+                                context,
+                                'Info',
+                                'Hasil scan tidak valid. Silakan coba lagi.',
+                                'info',
+                              );
+                            }
+                          }
                         } else {
-                          // showCustomSnackbar(
-                          //   context,
-                          //   'Anda sudah absen',
-                          // );
                           showSnackbar(
                             context,
                             'Info',
@@ -121,67 +121,6 @@ class _BuildAbsenceState extends State<BuildAbsence> {
                   }).toList(),
                 ],
               );
-              // children: [
-              //   const Header(jumlah: 1),
-              //   const SizedBox(
-              //     height: 12,
-              //   ),
-              //   HomeToDo(
-              //     title: 'Metodologi Penelitian Epidemiologi',
-              //     status: 'Completed',
-              //     date: '2024-10-13 09:00',
-              //     onTap: () async {
-              //       if ('Completed' == 'Completed') {
-              //         showCustomSnackbar(
-              //           context,
-              //           'Absent sudah di isi',
-              //         );
-              //       } else {
-              //         var permissionStatus = await Permission.camera.status;
-              //         if (permissionStatus.isDenied) {
-              //           permissionStatus = await Permission.camera.request();
-              //         }
-              //         if (permissionStatus == PermissionStatus.granted) {
-              //           String? cameraScanResult = await scanner.scan();
-              //           if (cameraScanResult != null) {
-              //             setState(() {});
-              //           }
-              //           Navigator.pushNamed(
-              //             context,
-              //             '/confirm-absent',
-              //             arguments: {'scanResult': cameraScanResult},
-              //           );
-              //         }
-              //       }
-              //     },
-              //   ),
-              //   // HomeToDo(
-              //   //   title: 'Dasar Diagnotik Terapi',
-              //   //   status: 'Incomplete',
-              //   //   date: '2024-10-13 09:00',
-              //   //   onTap: () async {
-              //   //     if ('Completed' == 'Incomplete') {
-              //   //       showCustomSnackbar(
-              //   //         context,
-              //   //         'Absent sudah di isi',
-              //   //       );
-              //   //     } else {
-              //   //       var permissionStatus = await Permission.camera.status;
-              //   //       if (permissionStatus.isDenied) {
-              //   //         permissionStatus = await Permission.camera.request();
-              //   //       }
-
-              //   //       if (permissionStatus == PermissionStatus.granted) {
-              //   //         String? cameraScanResult = await scanner.scan();
-              //   //         if (cameraScanResult != null) {
-              //   //           setState(() {});
-              //   //         }
-              //   //         Navigator.pushNamed(context, '/confirm-absent');
-              //   //       }
-              //   //     }
-              //   //   },
-              //   // ),
-              // ],
             } else {
               return const Column(
                 children: [
@@ -195,6 +134,53 @@ class _BuildAbsenceState extends State<BuildAbsence> {
         ),
       ),
     );
+  }
+}
+
+// Widget untuk halaman scanner QR
+class QRScannerPage extends StatefulWidget {
+  const QRScannerPage({super.key});
+
+  @override
+  State<QRScannerPage> createState() => _QRScannerPageState();
+}
+
+class _QRScannerPageState extends State<QRScannerPage> {
+  MobileScannerController cameraController = MobileScannerController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Scan QR Code'),
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: MobileScanner(
+        controller: cameraController,
+        onDetect: (capture) {
+          final List<Barcode> barcodes = capture.barcodes;
+          for (final barcode in barcodes) {
+            if (barcode.rawValue != null) {
+              // Kembali dengan hasil scan
+              Navigator.of(context).pop(barcode.rawValue);
+              break;
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    cameraController.dispose();
+    super.dispose();
   }
 }
 
