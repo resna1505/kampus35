@@ -249,7 +249,7 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
           showSnackbar(
             context,
             'Error',
-            data['message'] ?? 'Terjadi kesalahan',
+            data['messages']['message'] ?? 'Terjadi kesalahan',
             'error',
           );
         }
@@ -320,7 +320,7 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
         elevation: 0.5,
         backgroundColor: whiteColor,
         title: Text(
-          'Kartu Rencana Studi Stase',
+          'KRS Stase Remedial',
           style: blackTextStyle.copyWith(fontSize: 18, fontWeight: semiBold),
         ),
       ),

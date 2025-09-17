@@ -249,7 +249,7 @@ class _InputKRSStaseState extends State<InputKRSStase> {
           showSnackbar(
             context,
             'Error',
-            data['message'] ?? 'Terjadi kesalahan',
+            data['messages']['message'] ?? 'Terjadi kesalahan',
             'error',
           );
         }
