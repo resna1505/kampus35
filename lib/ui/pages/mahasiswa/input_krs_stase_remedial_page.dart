@@ -114,7 +114,12 @@ class _InputKRSStaseRemedialState extends State<InputKRSStaseRemedial> {
         });
       } else {
         if (mounted) {
-          showSnackbar(context, 'Info', 'Error ${response.statusCode}', 'info');
+          final body = jsonDecode(response.body);
+
+          final errorMessage =
+              body['messages']?['error'] ?? 'Terjadi kesalahan';
+
+          showSnackbar(context, 'Info', '$errorMessage', 'info');
         }
       }
     } catch (e) {
